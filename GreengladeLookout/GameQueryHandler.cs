@@ -12,10 +12,11 @@ namespace GreengladeLookout
 {
     public class GameQueryHandler
     {
-        public GameQueryHandler(ICatalogService catalogService, Version version, CardEmbedFactory cardEmbedFactory, KeywordEmbedFactory keywordEmbedFactory, DeckEmbedFactory deckEmbedFactory, IMessageChannel channel)
+        public GameQueryHandler(ICatalogService catalogService, Version version, Locale locale, CardEmbedFactory cardEmbedFactory, KeywordEmbedFactory keywordEmbedFactory, DeckEmbedFactory deckEmbedFactory, IMessageChannel channel)
         {
             CatalogService = catalogService;
             Version = version;
+            Locale = locale;
             CardEmbedFactory = cardEmbedFactory;
             KeywordEmbedFactory = keywordEmbedFactory;
             DeckEmbedFactory = deckEmbedFactory;
@@ -25,6 +26,8 @@ namespace GreengladeLookout
         private ICatalogService CatalogService { get; }
 
         private Version Version { get; }
+
+        private Locale Locale { get; }
 
         private CardEmbedFactory CardEmbedFactory { get; }
 
@@ -36,9 +39,7 @@ namespace GreengladeLookout
 
         public async Task<RuntimeResult> HandleQueryAsync(string query)
         {
-            var locale = new Locale("en", "US");
-
-            Catalog? catalog = await CatalogService.GetCatalog(locale, Version);
+            Catalog? catalog = await CatalogService.GetCatalog(Locale, Version);
             if (catalog is null)
             {
                 return TipsyRuntimeResult.FromError("Couldn't get list of cards.");

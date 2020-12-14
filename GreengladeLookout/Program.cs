@@ -5,6 +5,7 @@ using Bjerg;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
@@ -32,7 +33,7 @@ namespace GreengladeLookout
             var discordConfig = new DiscordSocketConfig {MessageCacheSize = 100};
             var client = new DiscordSocketClient(discordConfig);
 
-            IGuildSettingsSource guildInfoSource = new DefaultGuildSettingsSource(new CommandSettings
+            var guildInfoSource = new DefaultGuildSettingsSource(new GuildSettings
             {
                 CommandPrefix = ">",
                 AllowInlineCommands = true,
@@ -42,24 +43,27 @@ namespace GreengladeLookout
             });
 
             IServiceProvider services = new ServiceCollection()
+                .AddLogging(b => b.AddSerilog(dispose: true))
                 .Configure<GreengladeSettings>(config)
                 .Configure<TipsySettings>(config)
-                .AddLogging(b => b.AddSerilog(dispose: true))
-                .AddSingleton(client)
+                .AddDbContextPool<GreengladeContext>(options => options.UseSqlite(config["CONNECTION_STRING"]))
                 .AddSingleton(guildInfoSource)
+                .AddScoped<IGuildSettingsSource, EfCoreGuildSettingsSource>()
+                .AddSingleton(client)
                 .AddSingleton<IDataDragonFetcher, RiotDataDragonFetcher>()
                 .AddSingleton<ICatalogService, BasicCatalogService>()
                 .AddScoped<CardEmbedFactory>()
                 .AddScoped<KeywordEmbedFactory>()
                 .AddScoped<DeckEmbedFactory>()
+                .AddScoped<LocaleService>()
                 .AddSingleton<CommandService>()
+                .AddScoped<CommandDispatcher>()
+                .AddScoped<ICommandResultHandler, BasicCommandResultHandler>()
                 .BuildServiceProvider();
 
-            ICommandResultHandler commandResultHandler = new BasicCommandResultHandler();
-
-            CommandService commands = services.GetService<CommandService>();
+            CommandService commands = services.GetRequiredService<CommandService>();
             _ = await commands.AddModulesAsync(Assembly.GetEntryAssembly(), services);
-            using var handler = CommandHandler.CreateAndRegister(client, commands, guildInfoSource, commandResultHandler, services);
+            using var handler = DiscordEventHandler.CreateAndRegister(client, commands, services);
 
             await client.LoginAsync(TokenType.Bot, config["DISCORD_TOKEN"]);
             await client.StartAsync();

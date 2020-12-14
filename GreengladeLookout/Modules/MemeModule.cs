@@ -12,13 +12,16 @@ namespace GreengladeLookout.Modules
 {
     public class MemeModule : ModuleBase<SocketCommandContext>
     {
-        public MemeModule(ICatalogService catalogService, IOptionsSnapshot<TipsySettings> settings)
+        public MemeModule(ICatalogService catalogService, LocaleService localeService, IOptionsSnapshot<TipsySettings> settings)
         {
             CatalogService = catalogService;
+            LocaleService = localeService;
             Settings = settings.Value;
         }
 
         private ICatalogService CatalogService { get; }
+
+        private LocaleService LocaleService { get; }
 
         private TipsySettings Settings { get; }
 
@@ -52,7 +55,7 @@ namespace GreengladeLookout.Modules
         [Command("champroll")]
         public async Task<RuntimeResult> ChamprollAsync()
         {
-            var locale = new Locale("en", "US");
+            Locale locale = await LocaleService.GetGuildLocaleAsync(Context.Guild);
             var version = new Version(Settings.LatestVersion.ToArray());
 
             Catalog? catalog = await CatalogService.GetCatalog(locale, version);
