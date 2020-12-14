@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Text;
+using System.Threading.Tasks;
 using Bjerg;
 using Discord;
 using Discord.Commands;
@@ -78,7 +79,7 @@ namespace GreengladeLookout.Modules
             string? oldLocale = guild?.Locale;
             if (!LocaleService.TryParseLocale(locale, out Locale? loc))
             {
-                return TipsyRuntimeResult.FromError($"`{locale}` isn't a valid locale name.");
+                return TipsyRuntimeResult.FromError($"`{locale}` isn't a valid locale name. These are the recognized locales:\n\n{GetLocaleList()}");
             }
 
             Locale? oldLoc = null;
@@ -89,7 +90,7 @@ namespace GreengladeLookout.Modules
 
             if (!LocaleService.LocaleIsRecognized(loc!))
             {
-                return TipsyRuntimeResult.FromError($"`{loc}` isn't a recognized locale.");
+                return TipsyRuntimeResult.FromError($"`{loc}` isn't a recognized LoR locale. These are the recognized locales:\n\n{GetLocaleList()}");
             }
 
             if (guild is null)
@@ -119,6 +120,27 @@ namespace GreengladeLookout.Modules
             }
 
             return TipsyRuntimeResult.FromSuccess();
+        }
+
+        [Command("locales")]
+        public async Task LocalesAsync()
+        {
+            Embed embed = new EmbedBuilder()
+                .WithTitle("Available Locales")
+                .WithDescription(GetLocaleList())
+                .Build();
+            _ = await ReplyAsync(embed: embed);
+        }
+
+        private string GetLocaleList()
+        {
+            var sb = new StringBuilder();
+            foreach (Locale loc in LocaleService.GetRecognizedLocales())
+            {
+                sb.AppendLine($"🔸`{loc}`");
+            }
+
+            return sb.ToString();
         }
     }
 }
