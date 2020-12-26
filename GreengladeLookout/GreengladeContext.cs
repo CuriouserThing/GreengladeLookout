@@ -6,7 +6,9 @@ namespace GreengladeLookout
 {
     public class GreengladeContext : DbContext
     {
-        public GreengladeContext(DbContextOptions<GreengladeContext> options) : base(options) { }
+        public GreengladeContext(DbContextOptions<GreengladeContext> options) : base(options)
+        {
+        }
 
         public DbSet<Guild> Guilds { get; set; }
     }

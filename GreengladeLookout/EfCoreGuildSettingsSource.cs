@@ -33,7 +33,7 @@ namespace GreengladeLookout
                     InlineCommandAlias = settings.InlineCommandAlias,
                     InlineCommandOpener = settings.InlineCommandOpener,
                     InlineCommandCloser = settings.InlineCommandCloser,
-                    Locale = dbGuild.Locale ?? settings.Locale
+                    Locale = dbGuild.Locale ?? settings.Locale,
                 };
             }
         }

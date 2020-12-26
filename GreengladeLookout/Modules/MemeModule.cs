@@ -25,7 +25,15 @@ namespace GreengladeLookout.Modules
 
         private TipsySettings Settings { get; }
 
-        private static string[] LookoutReplies { get; } = {"*What do these yordle eyes see?* :3", "*What have we here~?* :3", "*There, through the trees!* :o", "*They're here. Sound the alarm!* :o", "*I see you there!* >:o", "*They're coming...* :x"};
+        private static string[] LookoutReplies { get; } =
+        {
+            "*What do these yordle eyes see?* :3",
+            "*What have we here~?* :3",
+            "*There, through the trees!* :o",
+            "*They're here. Sound the alarm!* :o",
+            "*I see you there!* >:o",
+            "*They're coming...* :x",
+        };
 
         private static bool CardIsValidChamp(ICard card, Catalog homeCatalog)
         {

@@ -27,10 +27,10 @@ namespace GreengladeLookout
             IConfiguration config = new ConfigurationBuilder()
                 .AddEnvironmentVariables()
                 .AddJsonFile(metaConfig["GREENGLADE_SETTINGS_PATH"], true, true)
-                .AddJsonFile(metaConfig["TIPSY_SETTINGS_PATH"], true, true)
+                .AddJsonFile(metaConfig["TIPSY_SETTINGS_PATH"],      true, true)
                 .Build();
 
-            var discordConfig = new DiscordSocketConfig {MessageCacheSize = 100};
+            var discordConfig = new DiscordSocketConfig { MessageCacheSize = 100 };
             var client = new DiscordSocketClient(discordConfig);
 
             var guildInfoSource = new DefaultGuildSettingsSource(new GuildSettings
@@ -39,7 +39,7 @@ namespace GreengladeLookout
                 AllowInlineCommands = true,
                 InlineCommandAlias = "search",
                 InlineCommandOpener = "<<",
-                InlineCommandCloser = ">>"
+                InlineCommandCloser = ">>",
             });
 
             IServiceProvider services = new ServiceCollection()

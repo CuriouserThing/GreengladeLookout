@@ -34,7 +34,7 @@ namespace GreengladeLookout.Modules
 
         private LocaleService LocaleService { get; }
 
-        private Version Version => new Version(TipsySettings.LatestVersion.ToArray());
+        private Version Version => new(TipsySettings.LatestVersion.ToArray());
 
         [Command("search")]
         public async Task<RuntimeResult> SearchAsync([Remainder] string query)
@@ -50,7 +50,7 @@ namespace GreengladeLookout.Modules
                 SubstringBookendWeight = GreengladeSettings.SubstringBookendWeight,
                 SubstringBookendTaper = GreengladeSettings.SubstringBookendTaper,
                 UncollectibleCardDownscaleFactor = GreengladeSettings.UncollectibleCardDownscaleFactor,
-                GlobalKeywordDownscaleFactor = GreengladeSettings.GlobalKeywordDownscaleFactor
+                GlobalKeywordDownscaleFactor = GreengladeSettings.GlobalKeywordDownscaleFactor,
             };
 
             return await handler.HandleQueryAsync(query);
@@ -65,7 +65,7 @@ namespace GreengladeLookout.Modules
                 SearchKeywordsByName = true,
                 StringMatchThreshold = GreengladeSettings.StringMatchThreshold,
                 SubstringBookendWeight = GreengladeSettings.SubstringBookendWeight,
-                SubstringBookendTaper = GreengladeSettings.SubstringBookendTaper
+                SubstringBookendTaper = GreengladeSettings.SubstringBookendTaper,
             };
 
             return await handler.HandleQueryAsync(name);
@@ -82,7 +82,7 @@ namespace GreengladeLookout.Modules
                 StringMatchThreshold = GreengladeSettings.StringMatchThreshold,
                 SubstringBookendWeight = GreengladeSettings.SubstringBookendWeight,
                 SubstringBookendTaper = GreengladeSettings.SubstringBookendTaper,
-                UncollectibleCardDownscaleFactor = GreengladeSettings.UncollectibleCardDownscaleFactor
+                UncollectibleCardDownscaleFactor = GreengladeSettings.UncollectibleCardDownscaleFactor,
             };
 
             return await handler.HandleQueryAsync(name);
@@ -92,7 +92,7 @@ namespace GreengladeLookout.Modules
         public async Task<RuntimeResult> DeckAsync(string code)
         {
             Locale locale = await LocaleService.GetGuildLocaleAsync(Context.Guild);
-            var handler = new GameQueryHandler(CatalogService, Version, locale, CardEmbedFactory, KeywordEmbedFactory, DeckEmbedFactory, Context.Channel) {SearchDeckByCode = true};
+            var handler = new GameQueryHandler(CatalogService, Version, locale, CardEmbedFactory, KeywordEmbedFactory, DeckEmbedFactory, Context.Channel) { SearchDeckByCode = true };
 
             return await handler.HandleQueryAsync(code);
         }

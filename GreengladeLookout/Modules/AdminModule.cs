@@ -22,12 +22,12 @@ namespace GreengladeLookout.Modules
 
         private LocaleService LocaleService { get; }
 
-        private async Task<IUserMessage> GenericReplyAsync(string message)
+        private async Task GenericReplyAsync(string message)
         {
             Embed embed = new EmbedBuilder()
                 .WithDescription(message)
                 .Build();
-            return await ReplyAsync(embed: embed);
+            _ = await ReplyAsync(embed: embed);
         }
 
         [Command("set prefix")]
@@ -47,7 +47,7 @@ namespace GreengladeLookout.Modules
                 guild = new Guild
                 {
                     Id = id,
-                    CommandPrefix = prefix
+                    CommandPrefix = prefix,
                 };
                 _ = DbContext.Add(guild);
             }
@@ -98,7 +98,7 @@ namespace GreengladeLookout.Modules
                 guild = new Guild
                 {
                     Id = id,
-                    Locale = locale
+                    Locale = locale,
                 };
                 _ = DbContext.Add(guild);
             }
