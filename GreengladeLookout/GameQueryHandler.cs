@@ -54,23 +54,27 @@ namespace GreengladeLookout
 
             string lookup = query.Trim();
 
-            var stringMatcherFactory = new StringMatcherFactory(s => new LevenshteinSubstringMatcher(s, SubstringBookendWeight, SubstringBookendTaper));
+            var stringMatcherFactory = new LevenshteinSubstringMatcher.Factory(SubstringBookendWeight, SubstringBookendTaper);
 
             var cardSearcher = new CatalogItemSearcher<ICard>(
-                    catalog,
-                    new CardNameGrouper(),
-                    stringMatcherFactory,
-                    new BasicCardSelector(catalog, homeCatalog),
-                    new UncollectibleCardMatchDownscaler(UncollectibleCardDownscaleFactor, GlobalCardDownscaleFactor) { PreserveStrongMatches = true })
-                { MatchThreshold = StringMatchThreshold };
+                catalog,
+                new CardNameGrouper())
+            {
+                StringMatcherFactory = stringMatcherFactory,
+                ItemSelector = new BasicCardSelector(catalog, homeCatalog),
+                ItemMatchScaler = new UncollectibleCardMatchDownscaler(UncollectibleCardDownscaleFactor, GlobalCardDownscaleFactor) { PreserveStrongMatches = true },
+                MatchThreshold = StringMatchThreshold,
+            };
 
             var keywordSearcher = new CatalogItemSearcher<LorKeyword>(
-                    catalog,
-                    new KeywordNameGrouper { IncludeVocabTerms = true },
-                    stringMatcherFactory,
-                    new BasicKeywordSelector(),
-                    new GlobalItemMatchDownscaler<LorKeyword>(GlobalKeywordDownscaleFactor) { PreserveStrongMatches = true })
-                { MatchThreshold = StringMatchThreshold };
+                catalog,
+                new KeywordNameGrouper { IncludeVocabTerms = true })
+            {
+                StringMatcherFactory = stringMatcherFactory,
+                ItemSelector = new BasicKeywordSelector(),
+                ItemMatchScaler = new GlobalItemMatchDownscaler<LorKeyword>(GlobalKeywordDownscaleFactor) { PreserveStrongMatches = true },
+                MatchThreshold = StringMatchThreshold,
+            };
 
             var omniSearcher = new OmniSearcher(homeCatalog, catalog, cardSearcher, keywordSearcher, DeckEmbedFactory, CardEmbedFactory, KeywordEmbedFactory)
             {
