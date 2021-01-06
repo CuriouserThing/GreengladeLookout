@@ -5,6 +5,7 @@ using Discord;
 using Discord.Commands;
 using GreengladeLookout.Entities;
 using TipsyOwl;
+using WumpusHall;
 
 namespace GreengladeLookout.Modules
 {
@@ -39,7 +40,7 @@ namespace GreengladeLookout.Modules
 
             if (oldPrefix == prefix)
             {
-                return TipsyRuntimeResult.FromError($"Command prefix is already `{prefix}`");
+                return WumpusRuntimeResult.FromError($"Command prefix is already `{prefix}`");
             }
 
             if (guild is null)
@@ -68,7 +69,7 @@ namespace GreengladeLookout.Modules
                 await GenericReplyAsync($"Changed command prefix from `{oldPrefix}` to `{prefix}`");
             }
 
-            return TipsyRuntimeResult.FromSuccess();
+            return WumpusRuntimeResult.FromSuccess();
         }
 
         [Command("set locale")]
@@ -79,18 +80,18 @@ namespace GreengladeLookout.Modules
             string? oldLocale = guild?.Locale;
             if (!LocaleService.TryParseLocale(locale, out Locale? loc))
             {
-                return TipsyRuntimeResult.FromError($"`{locale}` isn't a valid locale name. These are the recognized locales:\n\n{GetLocaleList()}");
+                return WumpusRuntimeResult.FromError($"`{locale}` isn't a valid locale name. These are the recognized locales:\n\n{GetLocaleList()}");
             }
 
             Locale? oldLoc = null;
             if (oldLocale != null && LocaleService.TryParseLocale(oldLocale, out oldLoc) && loc! == oldLoc!)
             {
-                return TipsyRuntimeResult.FromError($"Locale is already `{oldLoc}`");
+                return WumpusRuntimeResult.FromError($"Locale is already `{oldLoc}`");
             }
 
             if (!LocaleService.LocaleIsRecognized(loc!))
             {
-                return TipsyRuntimeResult.FromError($"`{loc}` isn't a recognized LoR locale. These are the recognized locales:\n\n{GetLocaleList()}");
+                return WumpusRuntimeResult.FromError($"`{loc}` isn't a recognized LoR locale. These are the recognized locales:\n\n{GetLocaleList()}");
             }
 
             if (guild is null)
@@ -119,7 +120,7 @@ namespace GreengladeLookout.Modules
                 await GenericReplyAsync($"Changed locale from `{oldLoc}` to `{loc}`");
             }
 
-            return TipsyRuntimeResult.FromSuccess();
+            return WumpusRuntimeResult.FromSuccess();
         }
 
         [Command("locales")]

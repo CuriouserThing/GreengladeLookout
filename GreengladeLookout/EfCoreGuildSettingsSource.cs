@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 using GreengladeLookout.Entities;
-using TipsyOwl;
+using WumpusHall;
 
 namespace GreengladeLookout
 {

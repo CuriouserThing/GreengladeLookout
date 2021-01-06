@@ -6,6 +6,7 @@ using Bjerg;
 using Discord.Commands;
 using Microsoft.Extensions.Options;
 using TipsyOwl;
+using WumpusHall;
 using Version = Bjerg.Version;
 
 namespace GreengladeLookout.Modules
@@ -69,13 +70,13 @@ namespace GreengladeLookout.Modules
             Catalog? catalog = await CatalogService.GetCatalog(locale, version);
             if (catalog is null)
             {
-                return TipsyRuntimeResult.FromError("Couldn't get list of cards.");
+                return WumpusRuntimeResult.FromError("Couldn't get list of cards.");
             }
 
             Catalog? homeCatalog = await CatalogService.GetHomeCatalog(version);
             if (homeCatalog is null)
             {
-                return TipsyRuntimeResult.FromError("Couldn't get list of cards.");
+                return WumpusRuntimeResult.FromError("Couldn't get list of cards.");
             }
 
             ICard[] champs = catalog.Cards.Values
@@ -101,7 +102,7 @@ namespace GreengladeLookout.Modules
 
             _ = ReplyAsync(sb.ToString());
 
-            return TipsyRuntimeResult.FromSuccess();
+            return WumpusRuntimeResult.FromSuccess();
         }
     }
 }

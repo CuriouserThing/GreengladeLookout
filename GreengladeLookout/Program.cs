@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using TipsyOwl;
+using WumpusHall;
 
 namespace GreengladeLookout
 {

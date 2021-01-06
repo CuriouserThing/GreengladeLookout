@@ -7,6 +7,7 @@ using Bjerg.Lor;
 using Discord;
 using Discord.Commands;
 using TipsyOwl;
+using WumpusHall;
 
 namespace GreengladeLookout
 {
@@ -42,13 +43,13 @@ namespace GreengladeLookout
             Catalog? catalog = await CatalogService.GetCatalog(Locale, Version);
             if (catalog is null)
             {
-                return TipsyRuntimeResult.FromError("Couldn't get list of cards.");
+                return WumpusRuntimeResult.FromError("Couldn't get list of cards.");
             }
 
             Catalog? homeCatalog = await CatalogService.GetHomeCatalog(Version);
             if (homeCatalog is null)
             {
-                return TipsyRuntimeResult.FromError("Couldn't get list of cards.");
+                return WumpusRuntimeResult.FromError("Couldn't get list of cards.");
             }
 
             string lookup = query.Trim();
@@ -84,7 +85,7 @@ namespace GreengladeLookout
             if (result.Count == 0)
             {
                 _ = await Channel.SendMessageAsync($"No results for `{lookup}`.");
-                return TipsyRuntimeResult.FromSuccess();
+                return WumpusRuntimeResult.FromSuccess();
             }
 
             string? didYouMean = null;
@@ -125,7 +126,7 @@ namespace GreengladeLookout
                 }
             }
 
-            return TipsyRuntimeResult.FromSuccess();
+            return WumpusRuntimeResult.FromSuccess();
         }
 
         #region Config

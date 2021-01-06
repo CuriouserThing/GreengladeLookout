@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using TipsyOwl;
+using WumpusHall;
 
 namespace GreengladeLookout
 {
