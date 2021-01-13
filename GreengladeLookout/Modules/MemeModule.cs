@@ -67,17 +67,8 @@ namespace GreengladeLookout.Modules
             Locale locale = await LocaleService.GetGuildLocaleAsync(Context.Guild);
             var version = new Version(Settings.LatestVersion.ToArray());
 
-            Catalog? catalog = await CatalogService.GetCatalog(locale, version);
-            if (catalog is null)
-            {
-                return WumpusRuntimeResult.FromError("Couldn't get list of cards.");
-            }
-
-            Catalog? homeCatalog = await CatalogService.GetHomeCatalog(version);
-            if (homeCatalog is null)
-            {
-                return WumpusRuntimeResult.FromError("Couldn't get list of cards.");
-            }
+            Catalog catalog = await CatalogService.GetCatalog(locale, version);
+            Catalog homeCatalog = await CatalogService.GetHomeCatalog(version);
 
             ICard[] champs = catalog.Cards.Values
                 .Where(c => CardIsValidChamp(c, homeCatalog))
