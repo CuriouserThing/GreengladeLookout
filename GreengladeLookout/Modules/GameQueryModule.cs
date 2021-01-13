@@ -13,11 +13,12 @@ namespace GreengladeLookout.Modules
 {
     public class GameQueryModule : ModuleBase<SocketCommandContext>
     {
-        public GameQueryModule(LocaleService localeService, ISearchService searchService, CardboardSearchViewBuilder cardboardSearchViewBuilder, KeywordSearchViewBuilder keywordSearchViewBuilder, DeckSearchViewBuilder deckSearchViewBuilder, AnythingSearchViewBuilder anythingSearchViewBuilder, IOptionsSnapshot<TipsySettings> tipsySettings)
+        public GameQueryModule(LocaleService localeService, ISearchService searchService, CardboardSearchViewBuilder cardboardSearchViewBuilder, CardFlavorSearchViewBuilder cardFlavorSearchViewBuilder, KeywordSearchViewBuilder keywordSearchViewBuilder, DeckSearchViewBuilder deckSearchViewBuilder, AnythingSearchViewBuilder anythingSearchViewBuilder, IOptionsSnapshot<TipsySettings> tipsySettings)
         {
             LocaleService = localeService;
             SearchService = searchService;
             CardboardSearchViewBuilder = cardboardSearchViewBuilder;
+            CardFlavorSearchViewBuilder = cardFlavorSearchViewBuilder;
             KeywordSearchViewBuilder = keywordSearchViewBuilder;
             DeckSearchViewBuilder = deckSearchViewBuilder;
             AnythingSearchViewBuilder = anythingSearchViewBuilder;
@@ -29,6 +30,8 @@ namespace GreengladeLookout.Modules
         private ISearchService SearchService { get; }
 
         private CardboardSearchViewBuilder CardboardSearchViewBuilder { get; }
+
+        private CardFlavorSearchViewBuilder CardFlavorSearchViewBuilder { get; }
 
         private KeywordSearchViewBuilder KeywordSearchViewBuilder { get; }
 
@@ -68,14 +71,31 @@ namespace GreengladeLookout.Modules
             }
         }
 
-        [Command("card")]
-        public async Task CardAsync([Remainder] string nameOrCode)
+        private async Task<TranslatedSearchResult<ICard>> FindCard(string nameOrCode)
         {
             Locale searchLocale = await LocaleService.GetGuildLocaleAsync(Context.Guild);
             var parameters = new SearchParameters(nameOrCode, searchLocale, Version);
-            TranslatedSearchResult<ICard> result = await SearchService.FindCard(parameters);
+            return await SearchService.FindCard(parameters);
+        }
+
+        [Command("card")]
+        public async Task CardAsync([Remainder] string nameOrCode)
+        {
+            TranslatedSearchResult<ICard> result = await FindCard(nameOrCode);
 
             MessageView view = await CardboardSearchViewBuilder.BuildView(result);
+            foreach (var info in view.Messages)
+            {
+                await ReplyAsync(info.Text, embed: info.Embed);
+            }
+        }
+
+        [Command("flavor")]
+        public async Task FlavorAsync([Remainder] string nameOrCode)
+        {
+            TranslatedSearchResult<ICard> result = await FindCard(nameOrCode);
+
+            MessageView view = await CardFlavorSearchViewBuilder.BuildView(result);
             foreach (var info in view.Messages)
             {
                 await ReplyAsync(info.Text, embed: info.Embed);

@@ -60,6 +60,8 @@ namespace GreengladeLookout
                 // Views
                 .AddScoped<CardboardViewBuilder>()
                 .AddScoped<CardboardSearchViewBuilder>()
+                .AddScoped<CardFlavorViewBuilder>()
+                .AddScoped<CardFlavorSearchViewBuilder>()
                 .AddScoped<KeywordViewBuilder>()
                 .AddScoped<KeywordSearchViewBuilder>()
                 .AddScoped<DeckViewBuilder>()
