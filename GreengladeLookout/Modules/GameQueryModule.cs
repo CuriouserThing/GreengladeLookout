@@ -1,100 +1,99 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
 using Bjerg;
+using Bjerg.CatalogSearching.Services;
+using Bjerg.Lor;
 using Discord.Commands;
+using GreengladeLookout.ViewBuilding;
 using Microsoft.Extensions.Options;
 using TipsyOwl;
+using WumpusHall;
 
 namespace GreengladeLookout.Modules
 {
     public class GameQueryModule : ModuleBase<SocketCommandContext>
     {
-        public GameQueryModule(ICatalogService catalogService, CardEmbedFactory cardEmbedFactory, KeywordEmbedFactory keywordEmbedFactory, DeckEmbedFactory deckEmbedFactory, IOptionsSnapshot<TipsySettings> tipsySettings, IOptionsSnapshot<GreengladeSettings> greengladeSettings, LocaleService localeService)
+        public GameQueryModule(LocaleService localeService, ISearchService searchService, CardboardSearchViewBuilder cardboardSearchViewBuilder, KeywordSearchViewBuilder keywordSearchViewBuilder, DeckSearchViewBuilder deckSearchViewBuilder, AnythingSearchViewBuilder anythingSearchViewBuilder, IOptionsSnapshot<TipsySettings> tipsySettings)
         {
-            CatalogService = catalogService;
-            CardEmbedFactory = cardEmbedFactory;
-            KeywordEmbedFactory = keywordEmbedFactory;
-            DeckEmbedFactory = deckEmbedFactory;
             LocaleService = localeService;
+            SearchService = searchService;
+            CardboardSearchViewBuilder = cardboardSearchViewBuilder;
+            KeywordSearchViewBuilder = keywordSearchViewBuilder;
+            DeckSearchViewBuilder = deckSearchViewBuilder;
+            AnythingSearchViewBuilder = anythingSearchViewBuilder;
             TipsySettings = tipsySettings.Value;
-            GreengladeSettings = greengladeSettings.Value;
         }
 
-        private ICatalogService CatalogService { get; }
+        private LocaleService LocaleService { get; }
 
-        private CardEmbedFactory CardEmbedFactory { get; }
+        private ISearchService SearchService { get; }
 
-        private KeywordEmbedFactory KeywordEmbedFactory { get; }
+        private CardboardSearchViewBuilder CardboardSearchViewBuilder { get; }
 
-        private DeckEmbedFactory DeckEmbedFactory { get; }
+        private KeywordSearchViewBuilder KeywordSearchViewBuilder { get; }
+
+        private DeckSearchViewBuilder DeckSearchViewBuilder { get; }
+
+        private AnythingSearchViewBuilder AnythingSearchViewBuilder { get; }
 
         private TipsySettings TipsySettings { get; }
-
-        private GreengladeSettings GreengladeSettings { get; }
-
-        private LocaleService LocaleService { get; }
 
         private Version Version => new(TipsySettings.LatestVersion.ToArray());
 
         [Command("search")]
-        public async Task<RuntimeResult> SearchAsync([Remainder] string query)
+        public async Task SearchAsync([Remainder] string query)
         {
-            Locale locale = await LocaleService.GetGuildLocaleAsync(Context.Guild);
-            var handler = new GameQueryHandler(CatalogService, Version, locale, CardEmbedFactory, KeywordEmbedFactory, DeckEmbedFactory, Context.Channel)
-            {
-                SearchDeckByCode = true,
-                SearchCardByCode = true,
-                SearchCardsByName = true,
-                SearchKeywordsByName = true,
-                StringMatchThreshold = GreengladeSettings.StringMatchThreshold,
-                SubstringBookendWeight = GreengladeSettings.SubstringBookendWeight,
-                SubstringBookendTaper = GreengladeSettings.SubstringBookendTaper,
-                UncollectibleCardDownscaleFactor = GreengladeSettings.UncollectibleCardDownscaleFactor,
-                GlobalKeywordDownscaleFactor = GreengladeSettings.GlobalKeywordDownscaleFactor,
-            };
+            Locale searchLocale = await LocaleService.GetGuildLocaleAsync(Context.Guild);
+            var parameters = new SearchParameters(query, searchLocale, Version);
+            TranslatedSearchResult<CatalogItemUnion> result = await SearchService.FindAnything(parameters);
 
-            return await handler.HandleQueryAsync(query);
+            MessageView view = await AnythingSearchViewBuilder.BuildView(result);
+            foreach (var info in view.Messages)
+            {
+                await ReplyAsync(info.Text, embed: info.Embed);
+            }
         }
 
         [Command("keyword")]
-        public async Task<RuntimeResult> KeywordAsync([Remainder] string name)
+        public async Task KeywordAsync([Remainder] string name)
         {
-            Locale locale = await LocaleService.GetGuildLocaleAsync(Context.Guild);
-            var handler = new GameQueryHandler(CatalogService, Version, locale, CardEmbedFactory, KeywordEmbedFactory, DeckEmbedFactory, Context.Channel)
-            {
-                SearchKeywordsByName = true,
-                StringMatchThreshold = GreengladeSettings.StringMatchThreshold,
-                SubstringBookendWeight = GreengladeSettings.SubstringBookendWeight,
-                SubstringBookendTaper = GreengladeSettings.SubstringBookendTaper,
-            };
+            Locale searchLocale = await LocaleService.GetGuildLocaleAsync(Context.Guild);
+            var parameters = new SearchParameters(name, searchLocale, Version);
+            TranslatedSearchResult<LorKeyword> result = await SearchService.FindKeyword(parameters);
 
-            return await handler.HandleQueryAsync(name);
+            MessageView view = await KeywordSearchViewBuilder.BuildView(result);
+            foreach (var info in view.Messages)
+            {
+                await ReplyAsync(info.Text, embed: info.Embed);
+            }
         }
 
         [Command("card")]
-        public async Task<RuntimeResult> CardAsync([Remainder] string name)
+        public async Task CardAsync([Remainder] string nameOrCode)
         {
-            Locale locale = await LocaleService.GetGuildLocaleAsync(Context.Guild);
-            var handler = new GameQueryHandler(CatalogService, Version, locale, CardEmbedFactory, KeywordEmbedFactory, DeckEmbedFactory, Context.Channel)
-            {
-                SearchCardByCode = true,
-                SearchCardsByName = true,
-                StringMatchThreshold = GreengladeSettings.StringMatchThreshold,
-                SubstringBookendWeight = GreengladeSettings.SubstringBookendWeight,
-                SubstringBookendTaper = GreengladeSettings.SubstringBookendTaper,
-                UncollectibleCardDownscaleFactor = GreengladeSettings.UncollectibleCardDownscaleFactor,
-            };
+            Locale searchLocale = await LocaleService.GetGuildLocaleAsync(Context.Guild);
+            var parameters = new SearchParameters(nameOrCode, searchLocale, Version);
+            TranslatedSearchResult<ICard> result = await SearchService.FindCard(parameters);
 
-            return await handler.HandleQueryAsync(name);
+            MessageView view = await CardboardSearchViewBuilder.BuildView(result);
+            foreach (var info in view.Messages)
+            {
+                await ReplyAsync(info.Text, embed: info.Embed);
+            }
         }
 
         [Command("deck")]
-        public async Task<RuntimeResult> DeckAsync(string code)
+        public async Task DeckAsync(string code)
         {
-            Locale locale = await LocaleService.GetGuildLocaleAsync(Context.Guild);
-            var handler = new GameQueryHandler(CatalogService, Version, locale, CardEmbedFactory, KeywordEmbedFactory, DeckEmbedFactory, Context.Channel) { SearchDeckByCode = true };
+            Locale searchLocale = await LocaleService.GetGuildLocaleAsync(Context.Guild);
+            var parameters = new SearchParameters(code, searchLocale, Version);
+            TranslatedSearchResult<Deck> result = await SearchService.FindDeck(parameters);
 
-            return await handler.HandleQueryAsync(code);
+            MessageView view = await DeckSearchViewBuilder.BuildView(result);
+            foreach (var info in view.Messages)
+            {
+                await ReplyAsync(info.Text, embed: info.Embed);
+            }
         }
     }
 }

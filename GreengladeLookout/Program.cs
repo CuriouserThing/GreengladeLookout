@@ -2,9 +2,12 @@
 using System.Reflection;
 using System.Threading.Tasks;
 using Bjerg;
+using Bjerg.CatalogSearching.Services;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using GreengladeLookout.Services;
+using GreengladeLookout.ViewBuilding;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -53,9 +56,16 @@ namespace GreengladeLookout
                 .AddSingleton(client)
                 .AddSingleton<IDataDragonFetcher, RiotDataDragonFetcher>()
                 .AddSingleton<ICatalogService, BasicCatalogService>()
-                .AddScoped<CardEmbedFactory>()
-                .AddScoped<KeywordEmbedFactory>()
-                .AddScoped<DeckEmbedFactory>()
+                .AddScoped<ISearchService, BasicLevenshteinSearchService>()
+                // Views
+                .AddScoped<CardboardViewBuilder>()
+                .AddScoped<CardboardSearchViewBuilder>()
+                .AddScoped<KeywordViewBuilder>()
+                .AddScoped<KeywordSearchViewBuilder>()
+                .AddScoped<DeckViewBuilder>()
+                .AddScoped<DeckSearchViewBuilder>()
+                .AddScoped<AnythingSearchViewBuilder>()
+                // Other
                 .AddScoped<LocaleService>()
                 .AddSingleton<CommandService>()
                 .AddScoped<CommandDispatcher>()
