@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Bjerg.CatalogSearching.Services;
 using WumpusHall;
@@ -27,6 +29,17 @@ namespace GreengladeLookout.ViewBuilding
                 CatalogItemUnion.Type.Keyword => KeywordSearchViewBuilder.GetItemName(item),
                 CatalogItemUnion.Type.Deck    => DeckSearchViewBuilder.GetItemName(item),
                 _                             => string.Empty,
+            };
+        }
+
+        public override async Task<IEnumerable<CatalogItemUnion>> ExpandItem(CatalogItemUnion item)
+        {
+            return item.T switch
+            {
+                CatalogItemUnion.Type.Card    => (await CardboardSearchViewBuilder.ExpandItem(item.Card!)).Select(CatalogItemUnion.AsCard),
+                CatalogItemUnion.Type.Keyword => (await KeywordSearchViewBuilder.ExpandItem(item)).Select(CatalogItemUnion.AsKeyword),
+                CatalogItemUnion.Type.Deck    => (await DeckSearchViewBuilder.ExpandItem(item)).Select(CatalogItemUnion.AsDeck),
+                _                             => new[] { item },
             };
         }
 
