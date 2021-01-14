@@ -13,12 +13,13 @@ namespace GreengladeLookout.Modules
 {
     public class GameQueryModule : ModuleBase<SocketCommandContext>
     {
-        public GameQueryModule(LocaleService localeService, ISearchService searchService, CardboardSearchViewBuilder cardboardSearchViewBuilder, CardFlavorSearchViewBuilder cardFlavorSearchViewBuilder, KeywordSearchViewBuilder keywordSearchViewBuilder, DeckSearchViewBuilder deckSearchViewBuilder, AnythingSearchViewBuilder anythingSearchViewBuilder, IOptionsSnapshot<TipsySettings> tipsySettings)
+        public GameQueryModule(LocaleService localeService, ISearchService searchService, CardboardSearchViewBuilder cardboardSearchViewBuilder, CardFlavorSearchViewBuilder cardFlavorSearchViewBuilder, CardRelationSearchViewBuilder cardRelationSearchViewBuilder, KeywordSearchViewBuilder keywordSearchViewBuilder, DeckSearchViewBuilder deckSearchViewBuilder, AnythingSearchViewBuilder anythingSearchViewBuilder, IOptionsSnapshot<TipsySettings> tipsySettings)
         {
             LocaleService = localeService;
             SearchService = searchService;
             CardboardSearchViewBuilder = cardboardSearchViewBuilder;
             CardFlavorSearchViewBuilder = cardFlavorSearchViewBuilder;
+            CardRelationSearchViewBuilder = cardRelationSearchViewBuilder;
             KeywordSearchViewBuilder = keywordSearchViewBuilder;
             DeckSearchViewBuilder = deckSearchViewBuilder;
             AnythingSearchViewBuilder = anythingSearchViewBuilder;
@@ -32,6 +33,8 @@ namespace GreengladeLookout.Modules
         private CardboardSearchViewBuilder CardboardSearchViewBuilder { get; }
 
         private CardFlavorSearchViewBuilder CardFlavorSearchViewBuilder { get; }
+
+        private CardRelationSearchViewBuilder CardRelationSearchViewBuilder { get; }
 
         private KeywordSearchViewBuilder KeywordSearchViewBuilder { get; }
 
@@ -96,6 +99,18 @@ namespace GreengladeLookout.Modules
             TranslatedSearchResult<ICard> result = await FindCard(nameOrCode);
 
             MessageView view = await CardFlavorSearchViewBuilder.BuildView(result);
+            foreach (var info in view.Messages)
+            {
+                await ReplyAsync(info.Text, embed: info.Embed);
+            }
+        }
+
+        [Command("related")]
+        public async Task RelatedAsync([Remainder] string nameOrCode)
+        {
+            TranslatedSearchResult<ICard> result = await FindCard(nameOrCode);
+
+            MessageView view = await CardRelationSearchViewBuilder.BuildView(result);
             foreach (var info in view.Messages)
             {
                 await ReplyAsync(info.Text, embed: info.Embed);
