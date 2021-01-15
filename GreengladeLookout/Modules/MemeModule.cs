@@ -68,7 +68,7 @@ namespace GreengladeLookout.Modules
             }
         }
 
-        private async Task ReplyAsync(ICard champA, ICard champB, Random rand)
+        private void Reply(ICard champA, ICard champB, Random rand)
         {
             string reply = LookoutReplies[rand.Next(0, LookoutReplies.Length)];
             string ca = GetChampString(champA);
@@ -101,7 +101,7 @@ namespace GreengladeLookout.Modules
                 b = rand.Next(0, champs.Length);
             } while (a == b);
 
-            await ReplyAsync(champs[a], champs[b], rand);
+            Reply(champs[a], champs[b], rand);
             return WumpusRuntimeResult.FromSuccess();
         }
 
@@ -129,7 +129,7 @@ namespace GreengladeLookout.Modules
                 var rand = new Random();
                 int b = rand.Next(0, champs.Length);
 
-                await ReplyAsync(champA, champs[b], rand);
+                Reply(champA, champs[b], rand);
                 return WumpusRuntimeResult.FromSuccess();
             }
         }
