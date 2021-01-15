@@ -3,6 +3,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Bjerg;
+using Bjerg.CatalogSearching;
+using Bjerg.CatalogSearching.Services;
 using Discord.Commands;
 using Microsoft.Extensions.Options;
 using TipsyOwl;
@@ -13,10 +15,11 @@ namespace GreengladeLookout.Modules
 {
     public class MemeModule : ModuleBase<SocketCommandContext>
     {
-        public MemeModule(ICatalogService catalogService, LocaleService localeService, IOptionsSnapshot<TipsySettings> settings)
+        public MemeModule(ICatalogService catalogService, LocaleService localeService, ISearchService searchService, IOptionsSnapshot<TipsySettings> settings)
         {
             CatalogService = catalogService;
             LocaleService = localeService;
+            SearchService = searchService;
             Settings = settings.Value;
         }
 
@@ -24,7 +27,11 @@ namespace GreengladeLookout.Modules
 
         private LocaleService LocaleService { get; }
 
+        private ISearchService SearchService { get; }
+
         private TipsySettings Settings { get; }
+
+        private Version Version => new(Settings.LatestVersion.ToArray());
 
         private static string[] LookoutReplies { get; } =
         {
@@ -61,14 +68,26 @@ namespace GreengladeLookout.Modules
             }
         }
 
+        private async Task ReplyAsync(ICard champA, ICard champB, Random rand)
+        {
+            string reply = LookoutReplies[rand.Next(0, LookoutReplies.Length)];
+            string ca = GetChampString(champA);
+            string cb = GetChampString(champB);
+
+            var sb = new StringBuilder();
+            _ = sb.AppendLine($"{reply}");
+            _ = sb.AppendLine();
+            _ = sb.AppendLine($"**{ca} × {cb}**");
+
+            _ = ReplyAsync(sb.ToString());
+        }
+
         [Command("champroll")]
         public async Task<RuntimeResult> ChamprollAsync()
         {
             Locale locale = await LocaleService.GetGuildLocaleAsync(Context.Guild);
-            var version = new Version(Settings.LatestVersion.ToArray());
-
-            Catalog catalog = await CatalogService.GetCatalog(locale, version);
-            Catalog homeCatalog = await CatalogService.GetHomeCatalog(version);
+            Catalog catalog = await CatalogService.GetCatalog(locale, Version);
+            Catalog homeCatalog = await CatalogService.GetHomeCatalog(Version);
 
             ICard[] champs = catalog.Cards.Values
                 .Where(c => CardIsValidChamp(c, homeCatalog))
@@ -82,18 +101,37 @@ namespace GreengladeLookout.Modules
                 b = rand.Next(0, champs.Length);
             } while (a == b);
 
-            string reply = LookoutReplies[rand.Next(0, LookoutReplies.Length)];
-            string ca = GetChampString(champs[a]);
-            string cb = GetChampString(champs[b]);
-
-            var sb = new StringBuilder();
-            _ = sb.AppendLine($"{reply}");
-            _ = sb.AppendLine();
-            _ = sb.AppendLine($"**{ca} × {cb}**");
-
-            _ = ReplyAsync(sb.ToString());
-
+            await ReplyAsync(champs[a], champs[b], rand);
             return WumpusRuntimeResult.FromSuccess();
+        }
+
+        [Command("champroll")]
+        public async Task<RuntimeResult> ChamprollAsync(string champNameOrCode)
+        {
+            Locale searchLocale = await LocaleService.GetGuildLocaleAsync(Context.Guild);
+            var parameters = new SearchParameters(champNameOrCode, searchLocale, Version);
+            TranslatedSearchResult<ICard> result = await SearchService.FindCard(parameters);
+
+            Catalog homeCatalog = await CatalogService.GetHomeCatalog(Version);
+            ItemMatch<ICard>? match = result.Matches.FirstOrDefault(m => CardIsValidChamp(m.Item, homeCatalog));
+
+            if (match is null)
+            {
+                return WumpusRuntimeResult.FromError($"Couldn't find a champ from `{champNameOrCode}`.");
+            }
+            else
+            {
+                ICard champA = match.Item;
+                Catalog catalog = await CatalogService.GetCatalog(searchLocale, Version);
+                ICard[] champs = catalog.Cards.Values
+                    .Where(c => c.Code != champA.Code && CardIsValidChamp(c, homeCatalog))
+                    .ToArray();
+                var rand = new Random();
+                int b = rand.Next(0, champs.Length);
+
+                await ReplyAsync(champA, champs[b], rand);
+                return WumpusRuntimeResult.FromSuccess();
+            }
         }
     }
 }
