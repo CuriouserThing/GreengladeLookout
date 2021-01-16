@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Bjerg;
 using Bjerg.CatalogSearching;
 using Bjerg.CatalogSearching.Services;
+using Bjerg.Lor;
 using Discord.Commands;
 using Microsoft.Extensions.Options;
 using TipsyOwl;
@@ -68,22 +69,43 @@ namespace GreengladeLookout.Modules
             }
         }
 
-        private void Reply(ICard champA, ICard champB, Random rand)
+        private string GetRegionString(LorFaction region)
+        {
+            string name = region.Name;
+            if (Settings.RegionIconEmotes.TryGetValue(region.Key, out ulong emoteId))
+            {
+                return $"<:{region.Abbreviation}:{emoteId}> {name}";
+            }
+            else
+            {
+                return name;
+            }
+        }
+
+        private async Task Reply(Catalog catalog, ICard champA, ICard champB, Random rand)
         {
             string reply = LookoutReplies[rand.Next(0, LookoutReplies.Length)];
             string ca = GetChampString(champA);
             string cb = GetChampString(champB);
 
-            var sb = new StringBuilder();
-            _ = sb.AppendLine($"{reply}");
-            _ = sb.AppendLine();
-            _ = sb.AppendLine($"**{ca} × {cb}**");
+            string cc = "";
+            if (champA.Region == champB.Region)
+            {
+                LorFaction[] regions = catalog.Regions.Values.ToArray();
+                LorFaction region = regions[rand.Next(0, regions.Length)];
+                cc = region == champA.Region ? " *(mono-region!!)*" : $" **+ {GetRegionString(region)}**";
+            }
 
-            _ = ReplyAsync(sb.ToString());
+            string msg = new StringBuilder()
+                .AppendLine($"{reply}")
+                .AppendLine()
+                .AppendLine($"**{ca} × {cb}**{cc}")
+                .ToString();
+            await ReplyAsync(msg);
         }
 
         [Command("champroll")]
-        public async Task<RuntimeResult> ChamprollAsync()
+        public async Task ChamprollAsync()
         {
             Locale locale = await LocaleService.GetGuildLocaleAsync(Context.Guild);
             Catalog catalog = await CatalogService.GetCatalog(locale, Version);
@@ -101,8 +123,7 @@ namespace GreengladeLookout.Modules
                 b = rand.Next(0, champs.Length);
             } while (a == b);
 
-            Reply(champs[a], champs[b], rand);
-            return WumpusRuntimeResult.FromSuccess();
+            await Reply(catalog, champs[a], champs[b], rand);
         }
 
         [Command("champroll")]
@@ -129,7 +150,7 @@ namespace GreengladeLookout.Modules
                 var rand = new Random();
                 int b = rand.Next(0, champs.Length);
 
-                Reply(champA, champs[b], rand);
+                await Reply(catalog, champA, champs[b], rand);
                 return WumpusRuntimeResult.FromSuccess();
             }
         }
