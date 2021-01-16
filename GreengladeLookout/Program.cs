@@ -37,9 +37,10 @@ namespace GreengladeLookout
             var discordConfig = new DiscordSocketConfig { MessageCacheSize = 100 };
             var client = new DiscordSocketClient(discordConfig);
 
+            const string prefix = ">";
             var guildInfoSource = new DefaultGuildSettingsSource(new GuildSettings
             {
-                CommandPrefix = ">",
+                CommandPrefix = prefix,
                 AllowInlineCommands = true,
                 InlineCommandAlias = "search",
                 InlineCommandOpener = "<<",
@@ -82,6 +83,7 @@ namespace GreengladeLookout
 
             await client.LoginAsync(TokenType.Bot, config["DISCORD_TOKEN"]);
             await client.StartAsync();
+            await client.SetActivityAsync(new Game($"{prefix}help | {prefix}about"));
             await Task.Delay(-1);
         }
     }
