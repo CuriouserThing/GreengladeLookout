@@ -94,6 +94,7 @@ namespace GreengladeLookout.Modules
         }
 
         [Command("flavor")]
+        [Alias("flavour")]
         public async Task FlavorAsync([Remainder] string nameOrCode)
         {
             TranslatedSearchResult<ICard> result = await FindCard(nameOrCode);
