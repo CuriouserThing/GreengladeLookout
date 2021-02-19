@@ -66,33 +66,72 @@ namespace GreengladeLookout.ViewBuilding
 
         private static IEnumerable<ICard> ExpandChamp(ICard card, Catalog localCatalog, Catalog homeCatalog)
         {
-            // The potential lv. 2 champs for this card are cards that share its code (sans T number)
+            // The potential lv. 2+ champs for this card are champion units that share its code (sans T number).
+            // We group the cards by name and evaluate the grouped cards together.
             CardCode bc = card.Code;
-            ICard[] champCards = localCatalog.Cards.Values
+            IGrouping<string?, ICard>[] hNameGroups = homeCatalog.Cards.Values
                 .Where(c =>
                            c.Code.Number == bc.Number &&
                            c.Code.TNumber != 0 &&
                            c.Code.Faction == bc.Faction &&
-                           c.Code.Set == bc.Set)
+                           c.Code.Set == bc.Set &&
+                           c.Supertype?.Name == "Champion" &&
+                           c.Type?.Name == "Unit")
+                .GroupBy(c => c.Name)
                 .ToArray();
 
-            // Of these, we [currently] only recognize the lv. 2 champ as the *single* card that either:
+            // Only attempt to find lv. 2+ champs if either:
+            // - There's a single name-group of cards (e.g. Spider Queen Elise)
+            // - There's a name-group of cards with the same name as the lv. 1 champ (e.g. Anivia but not Eggnivia)
+            ICard hCard = homeCatalog.Cards[card.Code];
+            IGrouping<string?, ICard>? hNameGroup = hNameGroups.Length == 1 ? hNameGroups[0] : hNameGroups.SingleOrDefault(g => g.Key == hCard.Name);
+            if (hNameGroup is null)
+            {
+                return new[] { card };
+            }
 
-            // - Shares its name with the lv. 1 champ (e.g. Anivia but not Eggnivia)
-            ICard[] sameNames = champCards
-                .Where(c => c.Name == card.Name)
-                .ToArray();
-            if (sameNames.Length == 1) { return new[] { card, sameNames[0] }; }
+            // If there's only one lv. 2+ champ in the group, assume it's the lv. 2 champ (e.g. Garen)
+            // If there are two lv. 2+ champs in the group, assume the one with a level-up is lv. 2 and the one with no level-up is lv. 3 (e.g. Renekton) 
+            // Otherwise, we can't assume anything.
+            ICard[] hCards = hNameGroup.ToArray();
+            ICard? hLv2 = null, hLv3 = null;
+            if (hCards.Length == 1)
+            {
+                hLv2 = hCards[0];
+            }
+            else if (hCards.Length == 2)
+            {
+                bool aLeveled = string.IsNullOrWhiteSpace(hCards[0].LevelupDescription);
+                bool bLeveled = string.IsNullOrWhiteSpace(hCards[1].LevelupDescription);
 
-            // - Is a Champion Unit (e.g. Spider Queen Elise)
-            ICard[] champUnits = champCards
-                .Select(c => homeCatalog.Cards[c.Code])
-                .Where(c => c.Supertype?.Name == "Champion" && c.Type?.Name == "Unit")
-                .ToArray();
-            if (champUnits.Length == 1) { return new[] { card, champUnits[0] }; }
+                if (!bLeveled && aLeveled)
+                {
+                    hLv2 = hCards[1];
+                    hLv3 = hCards[0];
+                }
 
-            // ...otherwise, just return the lv. 1 champ
-            return new[] { card };
+                if (!aLeveled && bLeveled)
+                {
+                    hLv2 = hCards[0];
+                    hLv3 = hCards[1];
+                }
+            }
+
+            // We're done! Return either one, two, or three levels of champs.
+
+            if (hLv2 is null)
+            {
+                return new[] { card };
+            }
+
+            ICard lLv2 = localCatalog.Cards[hLv2.Code];
+            if (hLv3 is null)
+            {
+                return new[] { card, lLv2 };
+            }
+
+            ICard lLv3 = localCatalog.Cards[hLv3.Code];
+            return new[] { card, lLv2, lLv3 };
         }
     }
 }
