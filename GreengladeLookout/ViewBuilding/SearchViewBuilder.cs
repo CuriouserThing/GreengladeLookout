@@ -15,7 +15,7 @@ namespace GreengladeLookout.ViewBuilding
 
             if (matches.Count == 0)
             {
-                return new MessageView($"No results for `{item.SearchTerm}`.");
+                return new MessageView($"No results found.");
             }
 
             string? didYouMean = null;
