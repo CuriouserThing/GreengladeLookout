@@ -2,8 +2,8 @@
 [*]
 charset = utf-8
 end_of_line = lf
-trim_trailing_whitespace = false
-insert_final_newline = false
+trim_trailing_whitespace = true
+insert_final_newline = true
 indent_style = space
 indent_size = 4
 
@@ -56,6 +56,7 @@ resharper_int_align_parameters = true
 resharper_int_align_property_patterns = true
 resharper_int_align_switch_expressions = true
 resharper_int_align_switch_sections = true
+resharper_keep_existing_attribute_arrangement = true
 resharper_keep_existing_embedded_block_arrangement = true
 resharper_keep_existing_enum_arrangement = true
 resharper_max_initializer_elements_on_line = 1
