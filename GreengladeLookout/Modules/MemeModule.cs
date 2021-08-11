@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Bjerg;
 using Bjerg.CatalogSearching;
 using Bjerg.CatalogSearching.Services;
+using Bjerg.DeckCoding;
 using Bjerg.Lor;
 using Discord.Commands;
 using Microsoft.Extensions.Options;
@@ -16,12 +18,13 @@ namespace GreengladeLookout.Modules
 {
     public class MemeModule : ModuleBase<SocketCommandContext>
     {
-        public MemeModule(ICatalogService catalogService, LocaleService localeService, ISearchService searchService, IOptionsSnapshot<TipsySettings> settings)
+        public MemeModule(ICatalogService catalogService, LocaleService localeService, ISearchService searchService, DeckViewBuilder deckViewBuilder, IOptionsSnapshot<TipsySettings> settings)
         {
-            CatalogService = catalogService;
-            LocaleService = localeService;
-            SearchService = searchService;
-            Settings = settings.Value;
+            CatalogService  = catalogService;
+            LocaleService   = localeService;
+            SearchService   = searchService;
+            DeckViewBuilder = deckViewBuilder;
+            Settings        = settings.Value;
         }
 
         private ICatalogService CatalogService { get; }
@@ -29,6 +32,8 @@ namespace GreengladeLookout.Modules
         private LocaleService LocaleService { get; }
 
         private ISearchService SearchService { get; }
+
+        private DeckViewBuilder DeckViewBuilder { get; }
 
         private TipsySettings Settings { get; }
 
@@ -153,6 +158,84 @@ namespace GreengladeLookout.Modules
                 await Reply(catalog, champA, champs[b], rand);
                 return WumpusRuntimeResult.FromSuccess();
             }
+        }
+
+        [Command("deckroll")]
+        public async Task<RuntimeResult> DeckrollAsync()
+        {
+            return await DeckrollAsync(40);
+        }
+
+        [Command("deckroll")]
+        public async Task<RuntimeResult> DeckrollAsync(int count)
+        {
+            count = Math.Min(120, Math.Abs(count));
+
+            var rand = new Random();
+
+            Locale locale = await LocaleService.GetGuildLocaleAsync(Context.Guild);
+            Catalog catalog = await CatalogService.GetCatalog(locale, Version);
+
+            List<LorFaction> regions = catalog.Regions.Values.ToList();
+
+            int ra = rand.Next(0, regions.Count);
+            LorFaction regionA = regions[ra];
+            regions.RemoveAt(ra);
+            LorFaction regionB = regions[rand.Next(0, regions.Count)];
+
+            IGrouping<bool, ICard>[] groups = catalog.Cards.Values
+                .Where(c => c.Collectible)
+                .Where(c => c.Region?.Index == regionA.Index || c.Region?.Index == regionB.Index)
+                .GroupBy(c => c.Rarity?.Key == "Champion")
+                .ToArray();
+            var champs = groups.Single(g => g.Key).ToList();
+            var nonChamps = groups.Single(g => !g.Key).ToList();
+
+            var ccs = new List<CardAndCount>();
+            var rccs = new List<RawCardAndCount>();
+
+            void AddCards(int numberOfCopies, List<ICard> source)
+            {
+                var n = 0;
+                while (n < numberOfCopies && source.Count > 0)
+                {
+                    int c = rand.NextDouble() switch
+                    {
+                        < 0.75 => 3,
+                        < 0.90 => 2,
+                        _      => 1,
+                    };
+                    c =  Math.Min(numberOfCopies - n, c);
+                    n += c;
+
+                    var index = (int)(rand.NextDouble() * source.Count);
+
+                    ICard card = source[index];
+                    ccs.Add(new CardAndCount(card, c));
+                    rccs.Add(new RawCardAndCount(card.Code.Set, card.Region!.Index, card.Code.Number, c));
+
+                    source.RemoveAt(index);
+                }
+            }
+
+            int champCount = count * 6 / 40;
+            AddCards(champCount,         champs);
+            AddCards(count - champCount, nonChamps);
+
+            string code = Coding.GetCodeFromDeckCards(rccs);
+            var deck = new Deck(code, locale, Version, ccs);
+
+            MessageView view = await DeckViewBuilder.BuildView(deck);
+
+            string reply = LookoutReplies[rand.Next(0, LookoutReplies.Length)] + "\n" + code;
+            await ReplyAsync(reply);
+
+            foreach (var info in view.Messages)
+            {
+                await ReplyAsync(info.Text, embed: info.Embed);
+            }
+
+            return WumpusRuntimeResult.FromSuccess();
         }
     }
 }
